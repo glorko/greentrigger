@@ -1,0 +1,6 @@
+services:
+  - name: hello-service
+    url: /hello
+    command: "java -jar resources/jar-example.jar"
+    env:
+      GLOBAL_VAR: "production"
