@@ -1,9 +1,9 @@
 package main
 
 import (
-  "fmt"
-  "greentrigger/services"
-  "os"
+	"fmt"
+	"greentrigger/services"
+	"os"
 )
 
 func main() {
@@ -21,20 +21,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Start listening on the configured service URL
+	// Start the services
 	for _, service := range config.Services {
-		go services.StartServer(service) // Start server in a separate goroutine
+		go func(service services.ServiceConfig) {
+			// Start the server and get the process details
+			process, err := services.StartServer(&service)
+			if err != nil {
+				fmt.Printf("Failed to start service %s: %v\n", service.Name, err)
+				return // Skip adding to HAProxy if the service didn't start
+			}
+
+			// Add the service to HAProxy using the process (which includes the port)
+			err = services.AddToHAProxy(process)
+			if err != nil {
+				fmt.Printf("Error adding service %s to HAProxy: %v\n", service.Name, err)
+				// Optionally, stop the process if adding to HAProxy fails
+				process.Command.Process.Kill()
+			}
+		}(service) // Pass `service` explicitly to avoid issues with goroutines
 	}
 
-	// Add the service to HAProxy via the HTTP API
-	for _, service := range config.Services {
-		err := services.AddToHAProxy(service)
-		if err != nil {
-			fmt.Printf("Error adding service %s to HAProxy: %v\n", service.Name, err)
-			os.Exit(1)
-		}
-	}
-
-	// Block the main function from exiting
+	// Block the main function from exiting (prevent deadlock)
 	select {}
 }
