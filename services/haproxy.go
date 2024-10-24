@@ -235,7 +235,7 @@ func createBackend(apiURL, backendName, transactionID string) error {
 func addServer(apiURL, backendName string, process *ServiceProcess, transactionID string) error {
 	serverData := map[string]interface{}{
 		"name":    process.Config.Name,
-		"address": "host.docker.internal",
+		"address": "localhost",
 		"port":    process.Port,
 	}
 	serverPayload, _ := json.Marshal(serverData)
