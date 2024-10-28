@@ -2,7 +2,7 @@ package haproxy
 
 import (
 	"fmt"
-	"net/http"
+	"greentrigger/services"
 )
 
 const haproxyAPIURL = "http://localhost:5555/v3/services/haproxy"
@@ -26,7 +26,7 @@ func NewHAProxyClient() *HAProxyClient {
 	}
 }
 
-func (c *HAProxyClient) BindGoService(backendName string, process *ServiceProcess) error {
+func (c *HAProxyClient) BindGoService(backendName string, process *services.ServiceProcess) error {
 	return c.transactionMiddleware(func(transactionID string) error {
 		// Create the backend if it doesn't exist
 		err := c.configManager.CreateBackend("service-backend", transactionID)
@@ -80,13 +80,4 @@ func (c *HAProxyClient) BindService(backendName, serviceName, serviceAddress str
 
 		return nil
 	})()
-}
-
-// HealthCheck performs a health check on the HAProxy server.
-func (c *HAProxyClient) HealthCheck() error {
-	_, err := http.Get(fmt.Sprintf("%s/health", haproxyAPIURL))
-	if err != nil {
-		return fmt.Errorf("health check failed: %v", err)
-	}
-	return nil
 }

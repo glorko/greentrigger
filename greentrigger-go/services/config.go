@@ -2,8 +2,8 @@ package services
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	yaml "gopkg.in/yaml.v2"
+	"os"
 )
 
 type ServiceConfig struct {
@@ -19,7 +19,7 @@ type Config struct {
 
 // LoadConfig reads the YAML config file
 func LoadConfig(path string) (*Config, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %v", err)
 	}

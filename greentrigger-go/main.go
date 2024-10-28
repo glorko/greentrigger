@@ -29,7 +29,7 @@ func main() {
 	err = haproxyClient.BindGoService("go-service-backend", &services.ServiceProcess{
 		Config: &services.ServiceConfig{
 			Name: "go-service",
-			URL:  "/go",
+			URL:  config.Services[0].URL,
 		},
 		Port: 8080, // Hardcoded port for now
 	})
@@ -42,16 +42,9 @@ func main() {
 	// Set up the root URL listener
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// Check if the requested path matches the configured URL
-		if r.URL.Path == config.URL {
+		if r.URL.Path == config.Services[0].URL {
 			// Start the Java service
-			javaService := &services.ServiceProcess{
-				Config: &services.ServiceConfig{
-					Name: "java-service",
-					URL:  config.URL,
-				},
-				Port: 8081, // Hardcoded port for now
-			}
-			err = javaService.Start()
+			javaService, err := services.StartServer(&config.Services[0])
 			if err != nil {
 				fmt.Printf("Error starting Java service: %v\n", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -60,7 +53,7 @@ func main() {
 			fmt.Println("Started Java service")
 
 			// Unbind the Go service from HAProxy
-			err = haproxyClient.UnbindService("go-service-backend")
+			err = haproxyClient.UnbindService("go-service-backend", "go-service")
 			if err != nil {
 				fmt.Printf("Error unbinding Go service from HAProxy: %v\n", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -69,7 +62,7 @@ func main() {
 			fmt.Println("Unbound Go service from HAProxy")
 
 			// Bind the Java service to HAProxy
-			err = haproxyClient.BindJavaService("java-service-backend", javaService)
+			err = haproxyClient.BindService("java-service-backend", "java-service", "localhost", javaService.Port)
 			if err != nil {
 				fmt.Printf("Error binding Java service to HAProxy: %v\n", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -78,7 +71,7 @@ func main() {
 			fmt.Println("Bound Java service to HAProxy")
 
 			// Redirect the request to the Java service
-			http.Redirect(w, r, fmt.Sprintf("http://localhost:%d%s", javaService.Port, config.URL), http.StatusTemporaryRedirect)
+			http.Redirect(w, r, fmt.Sprintf("http://localhost:%d%s", javaService.Port, config.Services[0].URL), http.StatusTemporaryRedirect)
 		} else {
 			// If the requested path doesn't match, return a 503 error
 			http.Error(w, "Service Unavailable", http.StatusServiceUnavailable)

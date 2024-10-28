@@ -2,6 +2,7 @@ package haproxy
 
 import (
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"strconv"
 )
 
