@@ -3,6 +3,7 @@ package haproxy
 import (
 	"fmt"
 	"greentrigger/services"
+	"log"
 )
 
 const haproxyAPIURL = "http://localhost:5555/v3/services/haproxy"
@@ -26,20 +27,28 @@ func NewHAProxyClient() *HAProxyClient {
 	}
 }
 
-func (c *HAProxyClient) BindGoService(backendName string, process *services.ServiceProcess) error {
-	return c.transactionMiddleware(func(transactionID string) error {
+func (c *HAProxyClient) BindGoService(backendName string, targetService services.ServiceConfig) error {
+	return c.transactionMiddleware(func(transactionID string, version int64) error {
 		// Create the backend if it doesn't exist
-		err := c.configManager.CreateBackend("service-backend", transactionID)
+		err := c.configManager.CreateBackend(backendName, transactionID)
 		if err != nil {
 			return fmt.Errorf("failed to create backend: %v", err)
 		}
 
-		// Add the Go service as a server to the backend
-		err = c.configManager.AddServer("service-backend", map[string]interface{}{
-			"name":    process.Config.Name,
+		// Delete both services
+		for _, serviceName := range []string{"go-service", targetService.Name} {
+			err = c.configManager.DeleteServer(backendName, serviceName, transactionID, version)
+			if err != nil {
+				log.Printf("[WARN] Could not delete service %s: %v", serviceName, err)
+			}
+		}
+
+		// Add the Go service with hardcoded config
+		err = c.configManager.AddServer(backendName, map[string]interface{}{
+			"name":    "go-service",
 			"address": "localhost",
-			"port":    process.Port,
-		}, transactionID)
+			"port":    8000, // Hardcoded here instead of main
+		}, transactionID, version)
 		if err != nil {
 			return fmt.Errorf("failed to add server to backend: %v", err)
 		}
@@ -50,9 +59,9 @@ func (c *HAProxyClient) BindGoService(backendName string, process *services.Serv
 
 // UnbindService removes the service from the HAProxy configuration.
 func (c *HAProxyClient) UnbindService(backendName, serviceName string) error {
-	return c.transactionMiddleware(func(transactionID string) error {
+	return c.transactionMiddleware(func(transactionID string, version int64) error {
 		// Replace the service with a placeholder
-		err := c.configManager.ReplaceServer(backendName, serviceName, transactionID, map[string]interface{}{
+		err := c.configManager.ReplaceServer(backendName, serviceName, transactionID, version, map[string]interface{}{
 			"name":    serviceName,
 			"address": "127.0.0.1",
 			"port":    0,
@@ -66,10 +75,10 @@ func (c *HAProxyClient) UnbindService(backendName, serviceName string) error {
 }
 
 // BindService replaces the existing service with the new service in the HAProxy configuration.
-func (c *HAProxyClient) BindService(backendName, serviceName, serviceAddress string, servicePort int) error {
-	return c.transactionMiddleware(func(transactionID string) error {
+func (c *HAProxyClient) BindService(backendName, serviceName, serviceAddress string, servicePort int, version int64) error {
+	return c.transactionMiddleware(func(transactionID string, version int64) error {
 		// Replace the existing service with the new service
-		err := c.configManager.ReplaceServer(backendName, serviceName, transactionID, map[string]interface{}{
+		err := c.configManager.ReplaceServer(backendName, serviceName, transactionID, version, map[string]interface{}{
 			"name":    serviceName,
 			"address": serviceAddress,
 			"port":    servicePort,

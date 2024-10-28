@@ -26,13 +26,7 @@ func main() {
 	haproxyClient := haproxy.NewHAProxyClient()
 
 	// Bind the Go service to HAProxy
-	err = haproxyClient.BindGoService("go-service-backend", &services.ServiceProcess{
-		Config: &services.ServiceConfig{
-			Name: "go-service",
-			URL:  config.Services[0].URL,
-		},
-		Port: 8080, // Hardcoded port for now
-	})
+	err = haproxyClient.BindGoService("service-backend", config.Services[0])
 	if err != nil {
 		fmt.Printf("Error binding Go service to HAProxy: %v\n", err)
 		os.Exit(1)
@@ -62,12 +56,12 @@ func main() {
 			fmt.Println("Unbound Go service from HAProxy")
 
 			// Bind the Java service to HAProxy
-			err = haproxyClient.BindService("java-service-backend", "java-service", "localhost", javaService.Port)
-			if err != nil {
-				fmt.Printf("Error binding Java service to HAProxy: %v\n", err)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				return
-			}
+			//err = haproxyClient.BindService("java-service-backend", "java-service", "localhost", javaService.Port)
+			//if err != nil {
+			//	fmt.Printf("Error binding Java service to HAProxy: %v\n", err)
+			//	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			//	return
+			//}
 			fmt.Println("Bound Java service to HAProxy")
 
 			// Redirect the request to the Java service
