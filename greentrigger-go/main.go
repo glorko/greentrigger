@@ -5,6 +5,8 @@ import (
 	"greentrigger/services"
 	"greentrigger/services/haproxy"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 )
 
@@ -35,43 +37,41 @@ func main() {
 
 	// Set up the root URL listener
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Check if the requested path matches the configured URL
-		if r.URL.Path == config.Services[0].URL {
-			// Start the Java service
-			javaService, err := services.StartServer(&config.Services[0])
-			if err != nil {
-				fmt.Printf("Error starting Java service: %v\n", err)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				return
-			}
-			fmt.Println("Started Java service")
-
-			// Unbind the Go service from HAProxy
-			err = haproxyClient.UnbindService("go-service-backend", "go-service")
-			if err != nil {
-				fmt.Printf("Error unbinding Go service from HAProxy: %v\n", err)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				return
-			}
-			fmt.Println("Unbound Go service from HAProxy")
-
-			// Bind the Java service to HAProxy
-			//err = haproxyClient.BindService("java-service-backend", "java-service", "localhost", javaService.Port)
-			//if err != nil {
-			//	fmt.Printf("Error binding Java service to HAProxy: %v\n", err)
-			//	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			//	return
-			//}
-			fmt.Println("Bound Java service to HAProxy")
-
-			// Redirect the request to the Java service
-			http.Redirect(w, r, fmt.Sprintf("http://localhost:%d%s", javaService.Port, config.Services[0].URL), http.StatusTemporaryRedirect)
-		} else {
-			// If the requested path doesn't match, return a 503 error
+		if r.URL.Path != config.Services[0].URL {
 			http.Error(w, "Service Unavailable", http.StatusServiceUnavailable)
+			return
 		}
-	})
 
+		// a) Start Java server and rebind in HAProxy
+		javaService, err := services.StartServer(&config.Services[0])
+		if err != nil {
+			fmt.Printf("Error starting service: %v\n", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		fmt.Printf("Started %s service\n", config.Services[0].Name)
+
+		err = haproxyClient.ReplaceGoStub("service-backend", javaService)
+		if err != nil {
+			fmt.Printf("Error replacing service in HAProxy: %v\n", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		fmt.Printf("Replaced go-service with %s service in HAProxy\n", config.Services[0].Name)
+
+		// b & c) Proxy this request to Java server and return response
+		proxy := httputil.NewSingleHostReverseProxy(&url.URL{
+			Scheme: "http",
+			Host:   fmt.Sprintf("localhost:%d", javaService.Port),
+		})
+		proxy.ServeHTTP(w, r)
+
+		// d) Exit the program as go listener is no longer needed
+		//go func() {
+		//	fmt.Println("Shutting down go listener as service is started")
+		//	os.Exit(0)
+		//}()
+	})
 	fmt.Println("Starting listener on :8000")
 	http.ListenAndServe(":8000", nil)
 }

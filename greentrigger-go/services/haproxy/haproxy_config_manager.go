@@ -18,6 +18,7 @@ func NewHAProxyConfigurationManager(apiURL, username, password string) *HAProxyC
 	client := resty.New()
 	client.SetBaseURL(apiURL)
 	client.SetBasicAuth(username, password)
+	client.SetDebug(true)
 	client.SetHeader("Content-Type", "application/json")
 	client.SetDisableWarn(true)
 	return &HAProxyConfigurationManager{
@@ -126,10 +127,9 @@ func (c *HAProxyConfigurationManager) CreateBackend(backendName, transactionID s
 }
 
 // AddServer adds a new server to the specified backend in the HAProxy configuration.
-func (c *HAProxyConfigurationManager) AddServer(backendName string, serverData map[string]interface{}, transactionID string, version int64) error {
+func (c *HAProxyConfigurationManager) AddServer(backendName string, serverData map[string]interface{}, transactionID string) error {
 	_, err := c.client.R().
 		SetQueryParam("transaction_id", transactionID).
-		SetQueryParam("version", strconv.FormatInt(int64(version), 10)).
 		SetBody(serverData).
 		Post(fmt.Sprintf("/configuration/backends/%s/servers", backendName))
 	if err != nil {
@@ -138,40 +138,28 @@ func (c *HAProxyConfigurationManager) AddServer(backendName string, serverData m
 
 	return nil
 }
-
-// ReplaceServer replaces the configuration of a server in the specified backend.
-func (c *HAProxyConfigurationManager) ReplaceServer(backendName, serverName, transactionID string, version int64, serverData map[string]interface{}) error {
-	_, err := c.client.R().
-		SetQueryParam("backend", backendName).
-		SetQueryParam("transaction_id", transactionID).
-		SetQueryParam("version", strconv.FormatInt(int64(version), 10)).
-		SetBody(serverData).
-		Put(fmt.Sprintf("/configuration/servers/%s", serverName))
-	if err != nil {
-		return fmt.Errorf("failed to replace server in backend: %v", err)
-	}
-
-	return nil
-}
-
-func (c *HAProxyConfigurationManager) DeleteServer(backendName, serverName, transactionID string, version int64) error {
+func (c *HAProxyConfigurationManager) DeleteServer(backendName, serverName, transactionID string) error {
 	resp, err := c.client.R().
 		SetQueryParam("transaction_id", transactionID).
-		SetQueryParam("backend", backendName).
-		SetQueryParam("parent_type", "backend").                         // Required param
-		SetQueryParam("version", strconv.FormatInt(int64(version), 10)). // Required param
-		Delete(fmt.Sprintf("/configuration/servers/%s", serverName))
+		Delete(fmt.Sprintf("/configuration/backends/%s/servers/%s", backendName, serverName))
+
 	if err != nil {
 		return fmt.Errorf("failed to delete server %s from backend %s: %v", serverName, backendName, err)
 	}
 
 	switch resp.StatusCode() {
-	case 204:
+	case 204, 202: // Accept both immediate success and accepted for reload
 		log.Printf("[INFO] Server %s successfully deleted from backend %s", serverName, backendName)
 		return nil
 	case 404:
-		log.Printf("[INFO] Server %s not found in backend %s", serverName, backendName)
-		log.Printf(resp.String())
+		var apiErr struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+		}
+		if err := json.Unmarshal(resp.Body(), &apiErr); err != nil {
+			return fmt.Errorf("failed to parse error response: %v", err)
+		}
+		log.Printf("[INFO] Server or backend not found: %s", apiErr.Message)
 		return nil
 	case 400:
 		return fmt.Errorf("API error deleting server %s from backend %s: %s",
