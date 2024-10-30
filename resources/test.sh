@@ -5,7 +5,7 @@ curl -s -u admin:mypassword http://localhost:5555/v3/services/haproxy/configurat
 
 echo -e "\nTesting cold start..."
 echo -n "Response: "
-curl -s -w "\nCold start request took: %{time_total}s\n" localhost/hello
+curl -w "\nDNS: %{time_namelookup}s\nConnect: %{time_connect}s\nAppCon: %{time_appconnect}s\nPreTrans: %{time_pretransfer}s\nRedirect: %{time_redirect}s\nStartTrans: %{time_starttransfer}s\nTotal: %{time_total}s\n" localhost/hello
 
 sleep 5
 
@@ -16,5 +16,5 @@ sleep 2
 
 echo -e "\nTesting warm service..."
 echo -n "Response: "
-curl -s -w "\nWarm service request took: %{time_total}s\n" localhost/hello
+curl -w "\nDNS: %{time_namelookup}s\nConnect: %{time_connect}s\nAppCon: %{time_appconnect}s\nPreTrans: %{time_pretransfer}s\nRedirect: %{time_redirect}s\nStartTrans: %{time_starttransfer}s\nTotal: %{time_total}s\n" localhost/hello
 echo

@@ -18,7 +18,7 @@ func NewHAProxyConfigurationManager(apiURL, username, password string) *HAProxyC
 	client := resty.New()
 	client.SetBaseURL(apiURL)
 	client.SetBasicAuth(username, password)
-	client.SetDebug(true)
+	//client.SetDebug(true)
 	client.SetHeader("Content-Type", "application/json")
 	client.SetDisableWarn(true)
 	return &HAProxyConfigurationManager{
