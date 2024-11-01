@@ -1,6 +1,8 @@
 # GraftNode
 
-GraftNode is a Go-based service that dynamically starts backend service instances only when needed, optimizing resource usage. It integrates with HAProxy for request routing and works with lightweight processes to minimize resource consumption.
+**GraftNode** is a core component of the [Plantarium Platform](https://github.com/plantarium-platform), a lightweight and resource-efficient solution inspired by cloud architecture principles, designed for running serverless functions and microservices.
+
+It is a Go-based service that dynamically starts backend service instances only when needed, optimizing resource usage. It integrates with HAProxy for request routing and works with lightweight processes to minimize resource consumption.
 
 ## Project Structure
 
@@ -60,13 +62,13 @@ Below is the simplified file structure of the GraftNode project:
   - HAProxy's configuration is updated to route requests to the newly started service.
 - The first request might experience a delay due to the service startup time.
 
-![Initial HAProxy Config](Screenshot from 2024-10-30 13-23-03.png)
+![Test Script Logs example](Screenshot%20from%202024-10-30%2013-23-03.png)
+
+![GraftNode Logs example](Screenshot%20from%202024-10-30%2013-29-51.png)
 
 ### After Warm-Up
 - Once the service instance is running, subsequent requests are handled immediately, ensuring optimal performance.
 - HAProxy now routes directly to the active service.
-
-![Service Replacement](Screenshot from 2024-10-30 13-29-51.png)
 
 ## Contact
 
