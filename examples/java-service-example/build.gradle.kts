@@ -5,7 +5,7 @@ plugins {
 }
 
 version = "0.1"
-group = "net.punklan.greentrigger"
+group = "net.punklan.graftnode"
 
 repositories {
     mavenCentral()
@@ -22,7 +22,7 @@ dependencies {
 
 
 application {
-    mainClass = "net.punklan.greentrigger.Application"
+    mainClass = "net.punklan.graftnode.Application"
 }
 java {
     sourceCompatibility = JavaVersion.toVersion("17")
@@ -37,7 +37,7 @@ micronaut {
     testRuntime("junit5")
     processing {
         incremental(true)
-        annotations("net.punklan.greentrigger.*")
+        annotations("net.punklan.graftnode.*")
     }
     aot {
         // Please review carefully the optimizations enabled below

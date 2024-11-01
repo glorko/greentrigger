@@ -7,7 +7,7 @@
 *.dll
 *.so
 *.dylib
-greentrigger-go/greentrigger
+graftnode-go/graftnode
 # Test binary, built with `go test -c`
 *.test
 

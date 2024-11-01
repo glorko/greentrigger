@@ -1,5 +1,5 @@
 applicationType: default
-defaultPackage: net.punklan.greentrigger
+defaultPackage: net.punklan.graftnode
 testFramework: junit
 sourceLanguage: java
 buildTool: gradle_kotlin

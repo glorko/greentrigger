@@ -1,4 +1,4 @@
-package net.punklan.greentrigger;
+package net.punklan.graftnode;
 
 import io.micronaut.runtime.EmbeddedApplication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;

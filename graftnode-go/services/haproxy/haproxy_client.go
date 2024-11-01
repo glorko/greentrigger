@@ -2,7 +2,7 @@ package haproxy
 
 import (
 	"fmt"
-	"greentrigger/services"
+	"graftnode/services"
 	"log"
 )
 

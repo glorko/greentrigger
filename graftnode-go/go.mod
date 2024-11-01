@@ -1,4 +1,4 @@
-module greentrigger
+module graftnode
 
 go 1.23
 

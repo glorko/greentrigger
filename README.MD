@@ -1,64 +1,73 @@
+# GraftNode
 
-# GreenTrigger [In Development]
-
-**GreenTrigger** is a lightweight, on-demand service execution and management system designed to optimize resource usage by only running services when needed. It’s perfect for environments aiming to reduce their carbon footprint by keeping services idle until triggered, thereby saving resources.
-
-## Features
-- **On-Demand Service Execution**: GreenTrigger starts services only when necessary, reducing resource consumption.
-- **HAProxy Integration**: Seamlessly integrates with HAProxy, dynamically adding service routes and managing them via HAProxy's API.
-- **Service Configuration**: Define service execution commands and environment variables in a simple YAML configuration file.
-
-## How It Works
-1. **Configuration**: GreenTrigger reads a YAML configuration file that defines the services and their URLs.
-2. **Service Execution**: When a service is triggered, GreenTrigger starts the corresponding service (e.g., a Java application).
-3. **Dynamic Routing**: The service is added to HAProxy's routing table, making it accessible through predefined endpoints.
-4. **Efficient Resource Usage**: Services only run when needed and can be shut down when no longer in use.
+GraftNode is a Go-based service that dynamically starts backend service instances only when needed, optimizing resource usage. It integrates with HAProxy for request routing and works with lightweight processes to minimize resource consumption.
 
 ## Project Structure
-\`\`\`bash
-my-go-project/
-├── main.go                   # Entry point of the GreenTrigger application
-├── resources/
-│   └── config-example.yml     # Example configuration file
-├── services/
-│   ├── config.go              # Configuration service to read YAML config
-│   ├── executor.go            # Executes services on demand
-│   └── haproxy.go             # Manages HAProxy API interaction
-\`\`\`
 
-## Setup and Usage
+Below is the simplified file structure of the GraftNode project:
 
-### 1. Clone the Repository:
-\`\`\`bash
-git clone https://github.com/your-username/greentrigger.git
-cd greentrigger
-\`\`\`
+```plaintext
++---examples
+|   \---java-service-example    # Example Java service used for testing and demonstrations
+|
++---graftnode-go
+|   |   go.mod
+|   |   go.sum
+|   |   main.go
+|   |
+|   \---services
+|       |   config.go           # Handles service configuration parsing and management
+|       |   executor.go         # Manages execution of service instances
+|       |   haproxy.go          # Interfaces with HAProxy for dynamic backend updates
+|       |
+|       \---haproxy
+|               haproxy_client.go       # HAProxy API client implementation
+|               haproxy_config_manager.go # Manages HAProxy configuration through API
+|               middleware.go           # Middleware for handling API requests
+|
+\---resources
+    |   config-example.yaml     # Example configuration file for GraftNode
+    |   java-service-example.jar # Example Java service binary
+    |   test.sh                 # Script for testing functionality
+    |
+    \---haproxy
+            haproxy-run.sh      # Script to run HAProxy in Docker
+            haproxy.cfg         # HAProxy configuration file
+```
 
-### 2. Install Dependencies:
-Make sure Go is installed and run the following to install the required dependencies:
-\`\`\`bash
-go mod tidy
-\`\`\`
+## How to Run
 
-### 3. Configure Your Services:
-Modify the \`resources/config-example.yml\` file to define the services you want to run on demand:
-\`\`\`yaml
-services:
-- name: hello-service
-  url: /hello
-  command: "java -jar /path/to/your/hello-world.jar"
-  env:
-  GLOBAL_VAR: "production"
-  \`\`\`
+1. **Step 1: Run HAProxy**
+  - Use the provided script to run HAProxy in a Docker container. From the root directory, execute:
+    ```bash
+    ./resources/haproxy/haproxy-run.sh
+    ```
+  - This command will start HAProxy with the necessary configuration for request routing.
 
-### 4. Run GreenTrigger:
-Pass the path to your configuration file as a parameter:
-\`\`\`bash
-go run main.go resources/config-example.yml
-\`\`\`
+2. **Step 2: Start GraftNode**
+  - Start the GraftNode server using the example configuration file:
+    ```bash
+    go run graftnode-go/main.go --config resources/config-example.yaml
+    ```
+  - The server will listen on port 8000 and bind the `/hello` backend to HAProxy.
 
-### 5. HAProxy Setup:
-Ensure that HAProxy is running and properly configured. GreenTrigger will dynamically add services to HAProxy when they are started.
+## How It Works
 
-### 6. License:
-This project is open-source, licensed under MIT License.
+### Initial Setup (Cold Start)
+- HAProxy is initially configured with a mock backend that doesn’t route to the actual service.
+- When the first request to `/hello` is received:
+  - GraftNode starts the Java service instance defined in `config-example.yaml`.
+  - HAProxy's configuration is updated to route requests to the newly started service.
+- The first request might experience a delay due to the service startup time.
+
+![Initial HAProxy Config](Screenshot from 2024-10-30 13-23-03.png)
+
+### After Warm-Up
+- Once the service instance is running, subsequent requests are handled immediately, ensuring optimal performance.
+- HAProxy now routes directly to the active service.
+
+![Service Replacement](Screenshot from 2024-10-30 13-29-51.png)
+
+## Contact
+
+If you have questions or want to contribute, feel free to reach out on [GitHub](https://github.com/glorko) or [Telegram](https://t.me/glorfindeil).

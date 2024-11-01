@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"greentrigger/services"
-	"greentrigger/services/haproxy"
+	"graftnode/services"
+	"graftnode/services/haproxy"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -12,7 +12,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: ./GreenTrigger <path-to-config>")
+		fmt.Println("Usage: ./GraftNode <path-to-config>")
 		os.Exit(1)
 	}
 	configPath := os.Args[1]
