@@ -4,6 +4,23 @@
 
 It is a Go-based service that dynamically starts backend service instances only when needed, optimizing resource usage. It integrates with HAProxy for request routing and works with lightweight processes to minimize resource consumption.
 
+## How It Works
+
+### Initial Setup (Cold Start)
+- HAProxy is initially configured with a mock backend that doesn’t route to the actual service.
+- When the first request to `/hello` is received:
+    - GraftNode starts the Java service instance defined in `config-example.yaml`.
+    - HAProxy's configuration is updated to route requests to the newly started service.
+- The first request might experience a delay due to the service startup time.
+
+![Test Script Logs example](Screenshot%20from%202024-10-30%2013-23-03.png)
+
+![GraftNode Logs example](Screenshot%20from%202024-10-30%2013-29-51.png)
+
+### After Warm-Up
+- Once the service instance is running, subsequent requests are handled immediately, ensuring optimal performance.
+- HAProxy now routes directly to the active service.
+
 ## Project Structure
 
 Below is the simplified file structure of the GraftNode project:
@@ -52,23 +69,14 @@ Below is the simplified file structure of the GraftNode project:
     go run graftnode-go/main.go --config resources/config-example.yaml
     ```
   - The server will listen on port 8000 and bind the `/hello` backend to HAProxy.
-
-## How It Works
-
-### Initial Setup (Cold Start)
-- HAProxy is initially configured with a mock backend that doesn’t route to the actual service.
-- When the first request to `/hello` is received:
-  - GraftNode starts the Java service instance defined in `config-example.yaml`.
-  - HAProxy's configuration is updated to route requests to the newly started service.
-- The first request might experience a delay due to the service startup time.
-
-![Test Script Logs example](Screenshot%20from%202024-10-30%2013-23-03.png)
-
-![GraftNode Logs example](Screenshot%20from%202024-10-30%2013-29-51.png)
-
-### After Warm-Up
-- Once the service instance is running, subsequent requests are handled immediately, ensuring optimal performance.
-- HAProxy now routes directly to the active service.
+3. **Test the Setup**:
+    - Use the `resources/test.sh` script to simulate requests and initiate the activities described:
+        - The script will send a `curl` request to `http://localhost/hello`, triggering GraftNode to start the service instance.
+        - Once the service is running, HAProxy will replace the initial configuration and forward future requests directly to the newly launched service.
+    - Run the script:
+      ```bash
+      ./resources/test.sh
+      ```
 
 ## Contact
 
