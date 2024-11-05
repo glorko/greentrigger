@@ -23,7 +23,8 @@ graftnode-go/graftnode
 
 # env file
 .env
-haproxy-run
+.haproxy-run
+vendor/
 
 .idea
 *.iml
