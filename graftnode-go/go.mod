@@ -1,4 +1,4 @@
-module graftnode
+module github.com/plantarium-platform/graftnode-go
 
 go 1.23
 
