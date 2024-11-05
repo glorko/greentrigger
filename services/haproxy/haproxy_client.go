@@ -2,7 +2,7 @@ package haproxy
 
 import (
 	"fmt"
-	"graftnode/services"
+	"github.com/plantarium-platform/graftnode-go/services"
 	"log"
 )
 

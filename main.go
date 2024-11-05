@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"graftnode/services"
-	"graftnode/services/haproxy"
+	"github.com/plantarium-platform/graftnode-go/services"
+	"github.com/plantarium-platform/graftnode-go/services/haproxy"
 	"net/http"
 	"net/http/httputil"
 	"net/url"

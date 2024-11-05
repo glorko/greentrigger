@@ -13,10 +13,6 @@ It is a Go-based service that dynamically starts backend service instances only 
     - HAProxy's configuration is updated to route requests to the newly started service.
 - The first request might experience a delay due to the service startup time.
 
-![Test Script Logs example](Screenshot%20from%202024-10-30%2013-23-03.png)
-
-![GraftNode Logs example](Screenshot%20from%202024-10-30%2013-29-51.png)
-
 ### After Warm-Up
 - Once the service instance is running, subsequent requests are handled immediately, ensuring optimal performance.
 - HAProxy now routes directly to the active service.
@@ -26,33 +22,24 @@ It is a Go-based service that dynamically starts backend service instances only 
 Below is the simplified file structure of the GraftNode project:
 
 ```plaintext
-+---examples
-|   \---java-service-example    # Example Java service used for testing and demonstrations
-|
-+---graftnode-go
-|   |   go.mod
-|   |   go.sum
-|   |   main.go
-|   |
-|   \---services
-|       |   config.go           # Handles service configuration parsing and management
-|       |   executor.go         # Manages execution of service instances
-|       |   haproxy.go          # Interfaces with HAProxy for dynamic backend updates
-|       |
-|       \---haproxy
-|               haproxy_client.go       # HAProxy API client implementation
-|               haproxy_config_manager.go # Manages HAProxy configuration through API
-|               middleware.go           # Middleware for handling API requests
-|
-\---resources
-    |   config-example.yaml     # Example configuration file for GraftNode
-    |   java-service-example.jar # Example Java service binary
-    |   test.sh                 # Script for testing functionality
-    |
-    \---haproxy
-            haproxy-run.sh      # Script to run HAProxy in Docker
-            haproxy.cfg         # HAProxy configuration file
-```
+.
+├── services
+│   ├── config.go           # Handles service configuration parsing and management
+│   ├── executor.go         # Manages execution of service instances
+│   └── haproxy
+│       ├── haproxy_client.go       # HAProxy API client implementation
+│       ├── haproxy_config_manager.go # Manages HAProxy configuration through API
+│       └── middleware.go           # Middleware for handling API requests
+├── go.mod
+├── go.sum
+├── main.go
+└── resources
+   ├── config-example.yaml     # Example configuration file for GraftNode
+   ├── java-service-example.jar # Example Java service binary
+   ├── test.sh                 # Script for testing functionality
+   └── haproxy
+       ├── haproxy-run.sh      # Script to run HAProxy in Docker
+       └── haproxy.cfg         # HAProxy configuration file
 
 ## How to Run
 
@@ -66,7 +53,7 @@ Below is the simplified file structure of the GraftNode project:
 2. **Step 2: Start GraftNode**
   - Start the GraftNode server using the example configuration file:
     ```bash
-    go run graftnode-go/main.go --config resources/config-example.yaml
+    go run main.go --config resources/config-example.yaml
     ```
   - The server will listen on port 8000 and bind the `/hello` backend to HAProxy.
 3. **Test the Setup**:
