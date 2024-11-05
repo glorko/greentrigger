@@ -87,3 +87,29 @@ func (c *HAProxyClient) BindService(backendName, serviceName, serviceAddress str
 		}, transactionID)
 	})()
 }
+
+func (c *HAProxyClient) DeleteAllServersFromBackend(backendName string) error {
+	return c.transactionMiddleware(func(transactionID string) error {
+		servers, err := c.configManager.GetServersFromBackend(backendName, transactionID)
+		if err != nil {
+			return err
+		}
+
+		for _, server := range servers {
+			err := c.configManager.DeleteServer(backendName, server.Name, transactionID)
+			if err != nil {
+				log.Printf("[WARN] Failed to delete server %s from backend %s: %v", server.Name, backendName, err)
+			} else {
+				log.Printf("[INFO] Deleted server %s from backend %s", server.Name, backendName)
+			}
+		}
+
+		return nil
+	})()
+}
+
+func (c *HAProxyClient) DeleteServer(backendName, serverName string) error {
+	return c.transactionMiddleware(func(transactionID string) error {
+		return c.configManager.DeleteServer(backendName, serverName, transactionID)
+	})()
+}

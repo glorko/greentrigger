@@ -13,6 +13,12 @@ type HAProxyConfigurationManager struct {
 	client *resty.Client
 }
 
+type HAProxyServer struct {
+	Name    string `json:"name"`
+	Address string `json:"address"`
+	Port    int    `json:"port"`
+}
+
 // NewHAProxyConfigurationManager creates a new instance of HAProxyConfigurationManager.
 func NewHAProxyConfigurationManager(apiURL, username, password string) *HAProxyConfigurationManager {
 	client := resty.New()
@@ -168,4 +174,27 @@ func (c *HAProxyConfigurationManager) DeleteServer(backendName, serverName, tran
 		return fmt.Errorf("unexpected status %d deleting server %s from backend %s: %s",
 			resp.StatusCode(), serverName, backendName, resp.String())
 	}
+}
+
+func (c *HAProxyConfigurationManager) GetServersFromBackend(backendName, transactionID string) ([]HAProxyServer, error) {
+	resp, err := c.client.R().
+		SetQueryParam("transaction_id", transactionID).
+		Get(fmt.Sprintf("/configuration/backends/%s/servers", backendName))
+	if err != nil {
+		return nil, fmt.Errorf("failed to list servers in backend %s: %v", backendName, err)
+	}
+
+	if resp.StatusCode() == 404 {
+		log.Printf("[INFO] Backend %s not found, no servers to get", backendName)
+		return nil, nil
+	} else if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("failed to list servers, status code: %d, response: %s", resp.StatusCode(), resp.String())
+	}
+
+	var servers []HAProxyServer
+	if err := json.Unmarshal(resp.Body(), &servers); err != nil {
+		return nil, fmt.Errorf("failed to parse server list: %v", err)
+	}
+
+	return servers, nil
 }
