@@ -40,6 +40,7 @@ Below is the simplified file structure of the GraftNode project:
    └── haproxy
        ├── haproxy-run.sh      # Script to run HAProxy in Docker
        └── haproxy.cfg         # HAProxy configuration file
+```
 
 ## How to Run
 
